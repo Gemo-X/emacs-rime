@@ -17,3 +17,8 @@
 # ccls cache directory
 .ccls-cache
 *.eln
+
+build
+Debug
+
+compile_commands.json

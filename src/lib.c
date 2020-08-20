@@ -17,11 +17,11 @@
 // Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 // Boston, MA 02110-1301, USA.
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <emacs-module.h>
+#include "emacs-module.h"
 #include <rime_api.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define INTERN(val) env->intern(env, val)
 #define GLOBAL_REF(val) env->make_global_ref(env, val)
@@ -46,46 +46,42 @@ typedef struct _EmacsRime {
 
 static char *copy_string(char *str) {
   if (str) {
-     size_t size = strlen(str);
-     char *new_str = malloc((size + 1) * sizeof(char));
-     strcpy(new_str, str);
-     new_str[size] = '\0';
-     return new_str;
+    size_t size = strlen(str);
+    char *new_str = malloc((size + 1) * sizeof(char));
+    strcpy(new_str, str);
+    new_str[size] = '\0';
+    return new_str;
   } else {
     return NULL;
   }
 }
 
-char *get_string(emacs_env *env, emacs_value arg)
-{
+char *get_string(emacs_env *env, emacs_value arg) {
   if (arg == NULL) {
     return NULL;
   } else {
-     ptrdiff_t size;
+    ptrdiff_t size;
     env->copy_string_contents(env, arg, NULL, &size);
-    char *buf = (char*) malloc(size * sizeof(char));
+    char *buf = (char *)malloc(size * sizeof(char));
     env->copy_string_contents(env, arg, buf, &size);
     return buf;
   }
 }
 
-void notification_handler(void *context,
-                          RimeSessionId session_id,
-                          const char *message_type,
-                          const char *message_value) {
+void notification_handler(void *context, RimeSessionId session_id,
+                          const char *message_type, const char *message_value) {
 }
 
-
-emacs_value
-string_length(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  char* str = get_string(env, args[0]);
+emacs_value string_length(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                          void *data) {
+  char *str = get_string(env, args[0]);
   int len = strlen(str);
   return INT(len);
 }
 
-emacs_value
-finalize(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value finalize(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                     void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
   if (rime->session_id) {
     rime->session_id = 0;
   }
@@ -93,27 +89,27 @@ finalize(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
   return t;
 }
 
-emacs_value
-get_sync_dir(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_sync_dir(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                         void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   const char *sync_dir = rime->api->get_sync_dir();
   return env->make_string(env, sync_dir, strlen(sync_dir));
 }
 
-emacs_value
-sync_user_data(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value sync_user_data(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                           void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   bool result = rime->api->sync_user_data();
   return result ? t : nil;
 }
 
-emacs_value
-start(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value start(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                  void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
-  char *shared_data_dir = get_string(env,  args[0]);
+  char *shared_data_dir = get_string(env, args[0]);
   char *user_data_dir = get_string(env, args[1]);
 
   RIME_STRUCT(RimeTraits, emacs_rime_traits);
@@ -141,10 +137,9 @@ start(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
   return t;
 }
 
-
-emacs_value
-get_option (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_option(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                       void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   char *option = get_string(env, args[0]);
   if (rime->api->get_option(rime->session_id, option)) {
@@ -153,10 +148,9 @@ get_option (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return nil;
 }
 
-
-emacs_value
-set_option (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value set_option(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                       void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   char *option = get_string(env, args[0]);
   bool value = env->is_not_nil(env, args[1]);
@@ -166,9 +160,9 @@ set_option (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return nil;
 }
 
-emacs_value
-process_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value process_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                        void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   int keycode = env->extract_integer(env, args[0]);
   int mask = env->extract_integer(env, args[1]);
@@ -179,12 +173,12 @@ process_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return nil;
 }
 
-emacs_value
-get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                        void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   RIME_STRUCT(RimeContext, context);
-  if (!rime->api->get_context(rime->session_id, &context)){
+  if (!rime->api->get_context(rime->session_id, &context)) {
     return nil;
   }
 
@@ -206,7 +200,8 @@ get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
 
   composition_a[0] = CONS(INTERN("length"), INT(length));
   composition_a[1] = CONS(INTERN("cursor-pos"), INT(cursor_pos));
-  composition_a[2] = CONS(INTERN("sel-start"), INT(context.composition.sel_start));
+  composition_a[2] =
+      CONS(INTERN("sel-start"), INT(context.composition.sel_start));
   composition_a[3] = CONS(INTERN("sel-end"), INT(context.composition.sel_end));
 
   char *preedit_str = copy_string(context.composition.preedit);
@@ -216,8 +211,8 @@ get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
     int before_cursor_len = cursor_pos;
     int after_cursor_len = length - cursor_pos;
 
-    char* before_cursor = malloc(before_cursor_len + 1);
-    char* after_cursor = malloc(after_cursor_len + 1);
+    char *before_cursor = malloc(before_cursor_len + 1);
+    char *after_cursor = malloc(after_cursor_len + 1);
 
     strncpy(before_cursor, preedit_str, before_cursor_len);
     strncpy(after_cursor, preedit_str + before_cursor_len, after_cursor_len);
@@ -243,12 +238,16 @@ get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   // 3. context.menu
   if (context.menu.num_candidates) {
     emacs_value menu_a[7];
-    menu_a[0] = CONS(INTERN("highlighted-candidate-index"), INT(context.menu.highlighted_candidate_index));
-    menu_a[1] = CONS(INTERN("last-page-p"), context.menu.is_last_page ? t : nil);
-    menu_a[2] = CONS(INTERN("num-candidates"), INT(context.menu.num_candidates));
+    menu_a[0] = CONS(INTERN("highlighted-candidate-index"),
+                     INT(context.menu.highlighted_candidate_index));
+    menu_a[1] =
+        CONS(INTERN("last-page-p"), context.menu.is_last_page ? t : nil);
+    menu_a[2] =
+        CONS(INTERN("num-candidates"), INT(context.menu.num_candidates));
     menu_a[3] = CONS(INTERN("page-no"), INT(context.menu.page_no));
     menu_a[4] = CONS(INTERN("page-size"), INT(context.menu.page_size));
-    menu_a[5] = CONS(INTERN("highlighted-candidate-index"), INT(context.menu.highlighted_candidate_index));
+    menu_a[5] = CONS(INTERN("highlighted-candidate-index"),
+                     INT(context.menu.highlighted_candidate_index));
     emacs_value carray[context.menu.num_candidates];
     // Build candidates
     for (int i = 0; i < context.menu.num_candidates; i++) {
@@ -257,7 +256,7 @@ get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
       char *comment_text = copy_string(c.comment);
       emacs_value comment;
       if (comment_text) {
-        comment =  STRING(comment_text);
+        comment = STRING(comment_text);
       } else {
         comment = nil;
       }
@@ -279,36 +278,34 @@ get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return result;
 }
 
-emacs_value
-version(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
+emacs_value version(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                    void *data) {
   return STRING("1.0.2");
 }
 
+emacs_value set_cursor_pos(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                           void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
+  int pos = env->extract_integer(env, args[0]);
 
-emacs_value
-set_cursor_pos(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-    EmacsRime *rime = (EmacsRime*) data;
-    int pos = env->extract_integer(env, args[0]);
+  rime->api->set_caret_pos(rime->session_id, pos);
 
-    rime->api->set_caret_pos(rime->session_id, pos);
-
-    return nil;
+  return nil;
 }
 
-
-emacs_value
-clear_composition(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value clear_composition(emacs_env *env, ptrdiff_t nargs,
+                              emacs_value *args, void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   rime->api->clear_composition(rime->session_id);
   return t;
 }
 
-emacs_value
-get_input (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_input(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                      void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
-  const char* input = rime->api->get_input(rime->session_id);
+  const char *input = rime->api->get_input(rime->session_id);
 
   if (!input) {
     return nil;
@@ -317,9 +314,9 @@ get_input (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   }
 }
 
-emacs_value
-get_commit(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_commit(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                       void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   RIME_STRUCT(RimeCommit, commit);
   if (rime->api->get_commit(rime->session_id, &commit)) {
@@ -336,10 +333,9 @@ get_commit(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return nil;
 }
 
-
-emacs_value
-select_schema(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value select_schema(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
+                          void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
   const char *schema_id = get_string(env, args[0]);
   if (rime->api->select_schema(rime->session_id, schema_id)) {
     return t;
@@ -347,10 +343,9 @@ select_schema(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
   return nil;
 }
 
-
-emacs_value
-get_schema_list(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value get_schema_list(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                            void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   RimeSchemaList schema_list;
 
@@ -363,7 +358,8 @@ get_schema_list(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) 
 
   for (int i = 0; i < schema_list.size; i++) {
     RimeSchemaListItem item = schema_list.list[i];
-    array[i] = FUNCALL2(INTERN("list"), STRING(item.schema_id), STRING(item.name));
+    array[i] =
+        FUNCALL2(INTERN("list"), STRING(item.schema_id), STRING(item.name));
   }
 
   emacs_value result = env->funcall(env, flist, schema_list.size, array);
@@ -381,17 +377,18 @@ get_schema_list(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) 
  * Find which key is used for inline_ascii, and simulate.
  * This is a tricky implementation, it work only when:
  * - build/default.yaml is exists.
- * - one of Shift_L, Shift_R, Control_L, Control_R is used to trigger inline_ascii.
+ * - one of Shift_L, Shift_R, Control_L, Control_R is used to trigger
+ * inline_ascii.
  *
  * TODO: Find a better way.
  */
-emacs_value
-inline_ascii(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
-  EmacsRime *rime = (EmacsRime*) data;
+emacs_value inline_ascii(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                         void *data) {
+  EmacsRime *rime = (EmacsRime *)data;
 
   RimeConfig *conf = malloc(sizeof(RimeConfig));
 
-  if(!rime->api->user_config_open("build/default.yaml", conf)) {
+  if (!rime->api->user_config_open("build/default.yaml", conf)) {
     free(conf);
     return nil;
   }
@@ -399,23 +396,27 @@ inline_ascii(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   char *buf = malloc(128 * sizeof(char));
   emacs_value result = nil;
 
-  if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Shift_L", buf, 128)
-      && (strcmp(buf, "inline_ascii") == 0)) {
+  if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Shift_L",
+                                   buf, 128) &&
+      (strcmp(buf, "inline_ascii") == 0)) {
     rime->api->process_key(rime->session_id, 65505, 0);
     rime->api->process_key(rime->session_id, 65505, 1073741824);
     result = STRING("inline_ascii");
-  } else if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Shift_R", buf, 128)
-             && (strcmp(buf, "inline_ascii") == 0)) {
+  } else if (rime->api->config_get_string(
+                 conf, "ascii_composer/switch_key/Shift_R", buf, 128) &&
+             (strcmp(buf, "inline_ascii") == 0)) {
     rime->api->process_key(rime->session_id, 65506, 0);
     rime->api->process_key(rime->session_id, 65506, 1073741824);
     result = STRING("inline_ascii");
-  } else if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Control_L", buf, 128)
-             && (strcmp(buf, "inline_ascii") == 0)) {
+  } else if (rime->api->config_get_string(
+                 conf, "ascii_composer/switch_key/Control_L", buf, 128) &&
+             (strcmp(buf, "inline_ascii") == 0)) {
     rime->api->process_key(rime->session_id, 65507, 0);
     rime->api->process_key(rime->session_id, 65507, 1073741824);
     result = STRING("inline_ascii");
-  } else if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Control_R", buf, 128)
-             && (strcmp(buf, "inline_ascii") == 0)) {
+  } else if (rime->api->config_get_string(
+                 conf, "ascii_composer/switch_key/Control_R", buf, 128) &&
+             (strcmp(buf, "inline_ascii") == 0)) {
     rime->api->process_key(rime->session_id, 65508, 0);
     rime->api->process_key(rime->session_id, 65508, 1073741824);
     result = STRING("inline_ascii");
@@ -430,20 +431,17 @@ inline_ascii(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
   return result;
 }
 
-
-void
-emacs_defun(emacs_env *env, EmacsRime *rime, void* cfunc, char* func_name, char* doc, size_t min, size_t max) {
+void emacs_defun(emacs_env *env, EmacsRime *rime, void *cfunc, char *func_name,
+                 char *doc, size_t min, size_t max) {
   emacs_value func = env->make_function(env, min, max, cfunc, doc, rime);
   FUNCALL2(REF("defalias"), REF(func_name), func);
 }
 
-int
-emacs_module_init (struct emacs_runtime *ert)
-{
+int emacs_module_init(struct emacs_runtime *ert) {
   emacs_env *env = ert->get_environment(ert);
 
   /* Get Rime API */
-  EmacsRime *rime = (EmacsRime*) malloc(sizeof(EmacsRime));
+  EmacsRime *rime = (EmacsRime *)malloc(sizeof(EmacsRime));
   rime->api = rime_get_api();
   if (!rime->api) {
     free(rime);
@@ -456,24 +454,35 @@ emacs_module_init (struct emacs_runtime *ert)
   /* Make functions */
 
   emacs_defun(env, rime, version, "rime-lib-version", "Version", 0, 0);
-  emacs_defun(env, rime, set_cursor_pos, "rime-lib-set-cursor-pos", "Set Cursor Pos", 1, 1);
+  emacs_defun(env, rime, set_cursor_pos, "rime-lib-set-cursor-pos",
+              "Set Cursor Pos", 1, 1);
   emacs_defun(env, rime, start, "rime-lib-start", "Start", 2, 2);
   emacs_defun(env, rime, finalize, "rime-lib-finalize", "Finalize", 0, 0);
-  emacs_defun(env, rime, sync_user_data, "rime-lib-sync-user-data", "Sync user data.", 0, 0);
-  emacs_defun(env, rime, get_sync_dir, "rime-lib-get-sync-dir", "Get sync directory.", 0, 0);
-  emacs_defun(env, rime, get_context, "rime-lib-get-context", "Get context.", 0, 0);
+  emacs_defun(env, rime, sync_user_data, "rime-lib-sync-user-data",
+              "Sync user data.", 0, 0);
+  emacs_defun(env, rime, get_sync_dir, "rime-lib-get-sync-dir",
+              "Get sync directory.", 0, 0);
+  emacs_defun(env, rime, get_context, "rime-lib-get-context", "Get context.", 0,
+              0);
   emacs_defun(env, rime, get_input, "rime-lib-get-input", "Get input.", 0, 0);
-  emacs_defun(env, rime, get_commit, "rime-lib-get-commit", "Get commit.", 0, 0);
-  emacs_defun(env, rime, clear_composition, "rime-lib-clear-composition", "Clear composition.", 0, 0);
-  emacs_defun(env, rime, process_key, "rime-lib-process-key", "Process key.", 2, 2);
-  emacs_defun(env, rime, select_schema, "rime-lib-select-schema", "Select schema", 1, 1);
-  emacs_defun(env, rime, get_schema_list, "rime-lib-get-schema-list", "Get schema list.", 0, 0);
-  emacs_defun(env, rime, string_length, "rime-lib-string-length", "Get length of string", 1, 1);
+  emacs_defun(env, rime, get_commit, "rime-lib-get-commit", "Get commit.", 0,
+              0);
+  emacs_defun(env, rime, clear_composition, "rime-lib-clear-composition",
+              "Clear composition.", 0, 0);
+  emacs_defun(env, rime, process_key, "rime-lib-process-key", "Process key.", 2,
+              2);
+  emacs_defun(env, rime, select_schema, "rime-lib-select-schema",
+              "Select schema", 1, 1);
+  emacs_defun(env, rime, get_schema_list, "rime-lib-get-schema-list",
+              "Get schema list.", 0, 0);
+  emacs_defun(env, rime, string_length, "rime-lib-string-length",
+              "Get length of string", 1, 1);
   emacs_defun(env, rime, get_option, "rime-lib-get-option", "Get option", 1, 1);
   emacs_defun(env, rime, set_option, "rime-lib-set-option", "Set option", 2, 2);
-  emacs_defun(env, rime, inline_ascii, "rime-lib-inline-ascii", "Inline ascii", 0, 0);
+  emacs_defun(env, rime, inline_ascii, "rime-lib-inline-ascii", "Inline ascii",
+              0, 0);
 
-  if (ert->size < sizeof (*ert))
+  if (ert->size < sizeof(*ert))
     return 1;
   else
     return 0;
