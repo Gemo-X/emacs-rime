@@ -1,27 +1,37 @@
-
 cmake_minimum_required(VERSION 3.6)
-
 project(
   emacs-rime
   LANGUAGES C
   )
 
+if(NOT DEFINED env{EMACS_MAJOR_VERSION})
+  set(EMACS_MAJOR_VERSION 26)
+endif()
+
 include_directories(
-  include
-)
+  include/emacs-module/${EMACS_MAJOR_VERSION}
+  )
 
 aux_source_directory(
   src DIR_SRCS
-)
+  )
 
 add_library(rime-emacs SHARED ${DIR_SRCS})
 
-# enable_testing()
-#
-# add_test(NAME emacs-rime COMMAND
-#   emacs --batch
-#     -L "${CMAKE_CURRENT_BINARY_DIR}"
-#     -L "${CMAKE_CURRENT_SOURCE_DIR}/test"
-#     -l rime
-#     -f ert-run-tests-batch-and-exit
-#   )
+if(APPLE)
+  set_target_properties(rime-emacs PROPERTIES SUFFIX .so)
+endif(APPLE)
+
+if(WIN32)
+  set_target_properties(rime-emacs PROPERTIES PREFIX lib)
+endif(WIN32)
+
+target_link_libraries(rime-emacs)
+target_include_directories(rime-emacs SYSTEM PRIVATE)
+
+if(CMAKE_COMPILER_IS_GNUCC)
+  target_compile_options(rime-emacs PRIVATE -Wall -Wextra)
+endif(CMAKE_COMPILER_IS_GNUCC)
+
+add_custom_command(TARGET rime-emacs POST_BUILD COMMAND
+  ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rime-emacs> "${CMAKE_CURRENT_BINARY_DIR}/..")

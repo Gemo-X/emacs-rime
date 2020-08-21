@@ -47,7 +47,7 @@ typedef struct _EmacsRime {
 static char *copy_string(char *str) {
   if (str) {
     size_t size = strlen(str);
-    char *new_str = malloc((size + 1) * sizeof(char));
+    char *new_str = (char *)malloc((size + 1) * sizeof(char));
     strcpy(new_str, str);
     new_str[size] = '\0';
     return new_str;
@@ -69,13 +69,12 @@ char *get_string(emacs_env *env, emacs_value arg) {
 }
 
 void notification_handler(void *context, RimeSessionId session_id,
-                          const char *message_type, const char *message_value) {
-}
+                          const char *message_type, const char *message_value){}
 
 emacs_value string_length(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
                           void *data) {
   char *str = get_string(env, args[0]);
-  int len = strlen(str);
+  int len = (int)strlen(str);
   return INT(len);
 }
 
@@ -112,7 +111,7 @@ emacs_value start(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
   char *shared_data_dir = get_string(env, args[0]);
   char *user_data_dir = get_string(env, args[1]);
 
-  RIME_STRUCT(RimeTraits, emacs_rime_traits);
+  RIME_STRUCT(RimeTraits, emacs_rime_traits)
 
   emacs_rime_traits.shared_data_dir = shared_data_dir;
   emacs_rime_traits.app_name = "rime.emacs";
@@ -177,7 +176,7 @@ emacs_value get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                         void *data) {
   EmacsRime *rime = (EmacsRime *)data;
 
-  RIME_STRUCT(RimeContext, context);
+  RIME_STRUCT(RimeContext, context)
   if (!rime->api->get_context(rime->session_id, &context)) {
     return nil;
   }
@@ -211,8 +210,8 @@ emacs_value get_context(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     int before_cursor_len = cursor_pos;
     int after_cursor_len = length - cursor_pos;
 
-    char *before_cursor = malloc(before_cursor_len + 1);
-    char *after_cursor = malloc(after_cursor_len + 1);
+    char *before_cursor = (char *)malloc(before_cursor_len + 1);
+    char *after_cursor = (char *)malloc(after_cursor_len + 1);
 
     strncpy(before_cursor, preedit_str, before_cursor_len);
     strncpy(after_cursor, preedit_str + before_cursor_len, after_cursor_len);
@@ -318,7 +317,7 @@ emacs_value get_commit(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                        void *data) {
   EmacsRime *rime = (EmacsRime *)data;
 
-  RIME_STRUCT(RimeCommit, commit);
+  RIME_STRUCT(RimeCommit, commit)
   if (rime->api->get_commit(rime->session_id, &commit)) {
     if (!commit.text) {
       return nil;
@@ -356,7 +355,7 @@ emacs_value get_schema_list(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   emacs_value flist = env->intern(env, "list");
   emacs_value array[schema_list.size];
 
-  for (int i = 0; i < schema_list.size; i++) {
+  for (int i = 0; i < (int)schema_list.size; i++) {
     RimeSchemaListItem item = schema_list.list[i];
     array[i] =
         FUNCALL2(INTERN("list"), STRING(item.schema_id), STRING(item.name));
@@ -386,14 +385,14 @@ emacs_value inline_ascii(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                          void *data) {
   EmacsRime *rime = (EmacsRime *)data;
 
-  RimeConfig *conf = malloc(sizeof(RimeConfig));
+  RimeConfig *conf = (RimeConfig *)malloc(sizeof(RimeConfig));
 
   if (!rime->api->user_config_open("build/default.yaml", conf)) {
     free(conf);
     return nil;
   }
 
-  char *buf = malloc(128 * sizeof(char));
+  char *buf = (char *)malloc(128 * sizeof(char));
   emacs_value result = nil;
 
   if (rime->api->config_get_string(conf, "ascii_composer/switch_key/Shift_L",
@@ -436,6 +435,7 @@ void emacs_defun(emacs_env *env, EmacsRime *rime, void *cfunc, char *func_name,
   emacs_value func = env->make_function(env, min, max, cfunc, doc, rime);
   FUNCALL2(REF("defalias"), REF(func_name), func);
 }
+
 
 int emacs_module_init(struct emacs_runtime *ert) {
   emacs_env *env = ert->get_environment(ert);
@@ -482,7 +482,7 @@ int emacs_module_init(struct emacs_runtime *ert) {
   emacs_defun(env, rime, inline_ascii, "rime-lib-inline-ascii", "Inline ascii",
               0, 0);
 
-  if (ert->size < sizeof(*ert))
+  if ((unsigned long)ert->size < sizeof(*ert))
     return 1;
   else
     return 0;
