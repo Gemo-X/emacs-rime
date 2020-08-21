@@ -12,6 +12,10 @@ else
     UNAME := $(patsubst MINGW%,MSYS,$(UNAME))
 endif
 
+ifndef EMACS_MAJOR_VERSION
+	EMACS_MAJOR_VERSION = 26
+endif
+
 ifdef MODULE_FILE_SUFFIX
 	SUFFIX = $(MODULE_FILE_SUFFIX)
 else
@@ -22,12 +26,14 @@ ifeq ($(UNAME),MSYS)
 	BUILD_OPTIONS+= -G "MSYS Makefiles"
 endif
 
+BUILD_OPTIONS += -DEMACS_MAJOR_VERSION=$(EMACS_MAJOR_VERSION)
+
 # TODO
 ifeq "$(TRAVIS)" "true"
 
 build/librime-emacs.so:
 	mkdir -p build
-	cd build && cmake .. &(BUILD_OPTIONS) && make
+	cd build && cmake .. $(BUILD_OPTIONS) && make
 
 else
 
@@ -59,6 +65,8 @@ build/$(TARGET):
 	@cd build && cmake .. $(BUILD_OPTIONS) && make
 
 $(TARGET): build/$(TARGET)
+
+lib: clean $(TARGET) loaddefs
 
 define LOADDEFS_TMPL
 ;;; $(PKG)-autoloads.el --- automatically extracted autoloads

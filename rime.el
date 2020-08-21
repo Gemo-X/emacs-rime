@@ -814,7 +814,7 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
   (interactive)
   (let ((env (rime--build-compile-env)))
     (if (zerop (shell-command
-                (format "cd %s; env %s make" rime--root env)))
+                (format "cd %s; env %s make lib" rime--root env)))
         (message "Compile succeed!")
       (error "Compile Rime dynamic module failed"))))
 
