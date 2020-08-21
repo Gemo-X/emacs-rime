@@ -797,22 +797,36 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
          'rime-indicator-dim-face))
     ""))
 
-(defun rime--build-compile-env ()
-  "Build compile env string."
-  (concat
-   (format "EMACS_MAJOR_VERSION=%s" emacs-major-version)
-   (if (not rime-librime-root) ""
-     (format "LIBRIME_ROOT=%s " (file-name-as-directory (expand-file-name rime-librime-root))))
-   )
+(defun rime--build-dir
+    (expand-file-name "build" rime--root))
 
+(defun rime--configure ()
+  "Build before"
+  (make-directory rime--build-dir 'parents)
+  (let ((default-directory rime--build-dir))
+    (set-process-sentinel
+     (start-process "rime-cmake" "*rime build*" "cmake" "..")
+     (lambda (proc _event)
+       (when (eq 'exit (process-status proc))
+	 (if (= 0 (process-exit-status proc))
+	     (rime-compile-module)
+	   (pop-to-buffer "*rime build*")
+	   (error "rime: configuring failed with exit code %d" (process-exit-status proc))))))
+    )
+  )
+  
 (defun rime-compile-module ()
   "Compile dynamic module."
-  (interactive)
-  (let ((env (rime--build-compile-env)))
-    (if (zerop (shell-command
-                (format "cd %s; mkdir build; cd build; cmake ..; env %s make" rime--root env)))
-        (message "Compile succeed!")
-      (error "Compile Rime dynamic module failed"))))
+  (let ((default-directory rime--build-dir))
+    (set-process-sentinel
+     (start-process "rime-cmake" "*rime build*" "make")
+     (lambda (proc _event)
+       (when (eq 'exit (process-status proc))
+	 (if (= 0 (process-exit-status proc))
+	     (rime--load-dynamic-module)
+	   (pop-to-buffer "*rime build*")
+	   (error "rime: building failed with exit code %d" (process-exit-status proc))))))))
+
 
 (defun rime--load-dynamic-module ()
   "Load dynamic module."
