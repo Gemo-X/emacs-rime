@@ -797,7 +797,7 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
          'rime-indicator-dim-face))
     ""))
 
-(defun rime--build-dir
+(defvar rime--build-dir
     (expand-file-name "build" rime--root))
 
 (defun rime--configure ()
