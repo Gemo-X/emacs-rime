@@ -48,3 +48,9 @@ endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_custom_command(TARGET rime-emacs POST_BUILD COMMAND
   ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rime-emacs> "${CMAKE_CURRENT_BINARY_DIR}/..")
+
+enable_testing()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND EGIT_TESTS refcount)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
