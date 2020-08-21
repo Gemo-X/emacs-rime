@@ -381,8 +381,8 @@ Each keybinding in this list, will be bound to `rime-send-keybinding' in `rime-a
 (defun rime--has-composition (context)
   "If CONTEXT has a meaningful composition data."
   (not (zerop (thread-last context
-                (alist-get 'composition)
-                (alist-get 'length)))))
+			   (alist-get 'composition)
+			   (alist-get 'length)))))
 
 (defun rime--minibuffer-display-content (content)
   "Display CONTENT in minibuffer."
@@ -535,16 +535,16 @@ Currently just deactivate input method."
       (dolist (c candidates)
         (let* ((curr (equal (1- idx) highlighted-candidate-index))
                (candidates-text (concat
-                                (propertize
-                                 (format "%d. " idx)
-                                 'face
-                                 'rime-candidate-num-face)
-                                (if curr
-                                   (propertize (car c) 'face 'rime-highlight-candidate-face)
-                                 (propertize (car c) 'face 'rime-default-face))
-                                (if-let (comment (cdr c))
-                                    (propertize (format " %s" comment) 'face 'rime-comment-face)
-                                  ""))))
+				 (propertize
+				  (format "%d. " idx)
+				  'face
+				  'rime-candidate-num-face)
+				 (if curr
+				     (propertize (car c) 'face 'rime-highlight-candidate-face)
+				   (propertize (car c) 'face 'rime-default-face))
+				 (if-let (comment (cdr c))
+					 (propertize (format " %s" comment) 'face 'rime-comment-face)
+					 ""))))
           (setq result (concat result
                                candidates-text
                                (rime--candidate-separator-char))))
@@ -583,8 +583,8 @@ the car is keyCode, the cdr is mask."
 (defun rime--current-preedit ()
   (if (eq rime-show-preedit 'inline)
       (thread-last (rime-lib-get-context)
-        (alist-get 'composition)
-        (alist-get 'preedit))
+		   (alist-get 'composition)
+		   (alist-get 'preedit))
     (alist-get 'commit-text-preview (rime-lib-get-context))))
 
 (defun rime--display-preedit ()
@@ -643,10 +643,10 @@ By default the input-method will not handle DEL, so we need this command."
   (interactive)
   (when (rime--rime-lib-module-ready-p)
     (when-let ((input (rime-lib-get-input)))
-      (rime--clear-overlay)
-      (insert input)
-      (rime-lib-clear-composition)
-      (rime--redisplay))
+	      (rime--clear-overlay)
+	      (insert input)
+	      (rime-lib-clear-composition)
+	      (rime--redisplay))
     (rime--refresh-mode-state)))
 
 (defun rime--ascii-mode-p ()
@@ -691,8 +691,8 @@ By default the input-method will not handle DEL, so we need this command."
             (let* ((context (rime-lib-get-context))
                    (commit-text-preview (alist-get 'commit-text-preview context))
                    (preedit (thread-last context
-                              (alist-get 'composition)
-                              (alist-get 'preedit)))
+					 (alist-get 'composition)
+					 (alist-get 'preedit)))
                    (commit (rime-lib-get-commit)))
               (unwind-protect
                   (cond
@@ -721,15 +721,15 @@ By default the input-method will not handle DEL, so we need this command."
          (key (if (numberp key-raw)
                   key-raw
                 (case key-raw
-                  (home #xff50)
-                  (left #xff51)
-                  (up #xff52)
-                  (right #xff53)
-                  (down #xff54)
-                  (prior #xff55)
-                  (next #xff56)
-                  (delete #xffff)
-                  (t key-raw))))
+		      (home #xff50)
+		      (left #xff51)
+		      (up #xff52)
+		      (right #xff53)
+		      (down #xff54)
+		      (prior #xff55)
+		      (next #xff56)
+		      (delete #xffff)
+		      (t key-raw))))
          (mask (cdr parsed)))
     (unless (numberp key)
       (error "Can't send this keybinding to librime"))
@@ -768,9 +768,9 @@ By default the input-method will not handle DEL, so we need this command."
              (schema-names (mapcar 'cdr schema-list))
              (schema-name (completing-read "Schema: " schema-names))
              (schema (thread-last schema-list
-                       (seq-find (lambda (s)
-                                   (equal (cadr s) schema-name)))
-                       (car))))
+				  (seq-find (lambda (s)
+					      (equal (cadr s) schema-name)))
+				  (car))))
         (message "Rime schema: %s" schema-name)
         (rime-lib-select-schema schema))
     (message "Rime is not activated.")))
@@ -798,9 +798,9 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
     ""))
 
 (defvar rime--build-dir
-    (expand-file-name "build" rime--root))
+  (expand-file-name "build" rime--root))
 
-(defun rime--configure ()
+(defun rime-compile-module ()
   "Build before"
   (make-directory rime--build-dir 'parents)
   (let ((default-directory rime--build-dir))
@@ -809,13 +809,13 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
      (lambda (proc _event)
        (when (eq 'exit (process-status proc))
 	 (if (= 0 (process-exit-status proc))
-	     (rime-compile-module)
+	     (rime--make-module)
 	   (pop-to-buffer "*rime build*")
 	   (error "rime: configuring failed with exit code %d" (process-exit-status proc))))))
     )
   )
-  
-(defun rime-compile-module ()
+
+(defun rime--make-module ()
   "Compile dynamic module."
   (let ((default-directory rime--build-dir))
     (set-process-sentinel
@@ -833,24 +833,24 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
       (error "Failed to compile dynamic module")
     (load-file rime--module-path)
     (if (rime--maybe-prompt-for-deploy)
-        (progn
-          (rime-lib-start (expand-file-name rime-share-data-dir)
-                          (expand-file-name rime-user-data-dir))
-          (setq rime--lib-loaded t))
+	(progn
+	  (rime-lib-start (expand-file-name rime-share-data-dir)
+			  (expand-file-name rime-user-data-dir))
+	  (setq rime--lib-loaded t))
       (error "Activate Rime failed"))))
 
 ;;;###autoload
 (defun rime-activate (name)
   "Activate rime.
-Argument NAME ignored."
+  Argument NAME ignored."
   (unless rime--lib-loaded
     (unless (file-exists-p rime--module-path)
-      (rime--configure))
+      (rime-compile-module))
     (rime--load-dynamic-module))
 
   (when rime--lib-loaded
     (dolist (binding rime-translate-keybindings)
-	  (define-key rime-active-mode-map (kbd binding) 'rime-send-keybinding))
+      (define-key rime-active-mode-map (kbd binding) 'rime-send-keybinding))
 
     (rime--clear-state)
     (when (and rime-deactivate-when-exit-minibuffer (minibufferp))
@@ -924,7 +924,7 @@ Argument NAME ignored."
 (define-minor-mode rime-active-mode
   "Mode used in composition.
 
-Should not be enabled manually."
+                   Should not be enabled manually."
   nil
   nil
   nil
@@ -945,17 +945,17 @@ Should not be enabled manually."
   "Prompt user to confirm the deploy action."
   (let ((user-data-dir (expand-file-name rime-user-data-dir)))
     (if (file-exists-p user-data-dir)
-        t
+	t
       (yes-or-no-p
        (format "Rime will use %s as the user data directory,
-first time deploy could take some time. Continue?" user-data-dir)))))
+                first time deploy could take some time. Continue?" user-data-dir)))))
 
 (defun rime-deploy()
   "Deploy Rime."
   (interactive)
   (when (rime--maybe-prompt-for-deploy)
     (if (not rime--lib-loaded)
-        (error "You should enable rime before deploy")
+	(error "You should enable rime before deploy")
       (rime-lib-finalize)
       (rime-lib-start (expand-file-name rime-share-data-dir)
                       (expand-file-name rime-user-data-dir)))))
@@ -971,7 +971,7 @@ first time deploy could take some time. Continue?" user-data-dir)))))
 (defun rime-force-enable ()
   "Enable temporarily ascii mode.
 
-Will resume when finish composition."
+  Will resume when finish composition."
   (interactive)
   (setq rime--temporarily-ignore-predicates t)
   (run-hooks 'rime-force-enable-hook))
@@ -986,12 +986,12 @@ Will resume when finish composition."
   (interactive)
   (if rime--lib-loaded
       (let* ((schema-list (rime-lib-get-schema-list))
-             (schema-names (mapcar 'cdr schema-list))
-             (schema-name (completing-read "Schema: " schema-names)))
-        (find-file (expand-file-name
-                    (format "%s.custom.yaml"
-                            (car (-find (lambda (arg) (equal (cadr arg) schema-name)) schema-list)))
-                    rime-user-data-dir)))
+	     (schema-names (mapcar 'cdr schema-list))
+	     (schema-name (completing-read "Schema: " schema-names)))
+	(find-file (expand-file-name
+		    (format "%s.custom.yaml"
+			    (car (-find (lambda (arg) (equal (cadr arg) schema-name)) schema-list)))
+		    rime-user-data-dir)))
     (message "Rime is not activated.")))
 
 
