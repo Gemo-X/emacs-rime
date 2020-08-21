@@ -827,7 +827,6 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
 	   (pop-to-buffer "*rime build*")
 	   (error "rime: building failed with exit code %d" (process-exit-status proc))))))))
 
-
 (defun rime--load-dynamic-module ()
   "Load dynamic module."
   (if (not (file-exists-p rime--module-path))
@@ -846,7 +845,7 @@ You can customize the color with `rime-indicator-face' and `rime-indicator-dim-f
 Argument NAME ignored."
   (unless rime--lib-loaded
     (unless (file-exists-p rime--module-path)
-      (rime-compile-module))
+      (rime--configure))
     (rime--load-dynamic-module))
 
   (when rime--lib-loaded
